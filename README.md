@@ -2,6 +2,8 @@
 
 An interactive visualization of gradient descent optimization algorithm, built with vanilla JavaScript and HTML5 Canvas.
 
+View on Github Pages - [Live Demo](https://williambrannock.github.io/mlviz/)
+
 ## Features
 
 - **Multiple Test Functions**: 
