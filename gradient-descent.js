@@ -5,6 +5,52 @@ const funcCtx = functionCanvas.getContext('2d');
 const contourCtx = contourCanvas.getContext('2d');
 const learningRateInput = document.getElementById('learningRate');
 const lrValueDisplay = document.getElementById('lrValue');
+const CANVAS_ASPECT_RATIO = functionCanvas.height / functionCanvas.width;
+
+function resizeCanvas(canvas) {
+    const parent = canvas.parentElement;
+    if (!parent) {
+        return false;
+    }
+
+    const displayWidth = parent.clientWidth;
+    if (!displayWidth) {
+        return false;
+    }
+
+    const targetWidth = Math.max(1, Math.round(displayWidth));
+    const targetHeight = Math.max(1, Math.round(targetWidth * CANVAS_ASPECT_RATIO));
+
+    if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        return true;
+    }
+
+    return false;
+}
+
+function resizeCanvases() {
+    let updated = false;
+    [functionCanvas, contourCanvas].forEach((canvas) => {
+        if (resizeCanvas(canvas)) {
+            updated = true;
+        }
+    });
+
+    return updated;
+}
+
+let resizeTimeoutId = null;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeoutId);
+    resizeTimeoutId = setTimeout(() => {
+        if (resizeCanvases()) {
+            drawFunctionSurface();
+            drawContourPlot();
+        }
+    }, 150);
+});
 
 // State variables
 let currentX = 3;
@@ -134,8 +180,8 @@ function drawFunctionSurface() {
     const optX = toCanvasX(func.optimum.x, range);
     const optY = toCanvasY(func.optimum.y, range);
     
-    funcCtx.fillStyle = 'white';
-    funcCtx.strokeStyle = '#333';
+    funcCtx.fillStyle = '#ffffff';
+    funcCtx.strokeStyle = 'rgba(234, 88, 12, 0.85)';
     funcCtx.lineWidth = 2;
     funcCtx.beginPath();
     funcCtx.arc(optX, optY, 8, 0, Math.PI * 2);
@@ -143,7 +189,7 @@ function drawFunctionSurface() {
     funcCtx.stroke();
     
     // Draw axes
-    funcCtx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+    funcCtx.strokeStyle = 'rgba(15, 23, 42, 0.25)';
     funcCtx.lineWidth = 1;
     funcCtx.setLineDash([5, 5]);
     
@@ -218,7 +264,7 @@ function drawContourPlot() {
     
     // Draw path
     if (history.length > 1) {
-        contourCtx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        contourCtx.strokeStyle = 'rgba(234, 88, 12, 0.85)';
         contourCtx.lineWidth = 2;
         contourCtx.beginPath();
         
@@ -238,9 +284,9 @@ function drawContourPlot() {
             const x = toCanvasX(point.x, range);
             const y = toCanvasY(point.y, range);
             
-            const alpha = 0.3 + (i / history.length) * 0.7;
-            contourCtx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-            contourCtx.strokeStyle = `rgba(0, 0, 0, ${alpha})`;
+            const alpha = 0.25 + (i / history.length) * 0.5;
+            contourCtx.fillStyle = `rgba(249, 115, 22, ${alpha})`;
+            contourCtx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
             contourCtx.lineWidth = 2;
             contourCtx.beginPath();
             contourCtx.arc(x, y, 4, 0, Math.PI * 2);
@@ -253,8 +299,8 @@ function drawContourPlot() {
     const currentCanvasX = toCanvasX(currentX, range);
     const currentCanvasY = toCanvasY(currentY, range);
     
-    contourCtx.fillStyle = '#48bb78';
-    contourCtx.strokeStyle = 'white';
+    contourCtx.fillStyle = '#f97316';
+    contourCtx.strokeStyle = '#ffffff';
     contourCtx.lineWidth = 3;
     contourCtx.beginPath();
     contourCtx.arc(currentCanvasX, currentCanvasY, 8, 0, Math.PI * 2);
@@ -265,8 +311,8 @@ function drawContourPlot() {
     const optX = toCanvasX(func.optimum.x, range);
     const optY = toCanvasY(func.optimum.y, range);
     
-    contourCtx.fillStyle = 'white';
-    contourCtx.strokeStyle = '#333';
+    contourCtx.fillStyle = '#ffffff';
+    contourCtx.strokeStyle = 'rgba(15, 23, 42, 0.6)';
     contourCtx.lineWidth = 2;
     contourCtx.beginPath();
     contourCtx.arc(optX, optY, 8, 0, Math.PI * 2);
@@ -297,8 +343,11 @@ function gradientDescentStep() {
     iteration++;
     
     updateStats();
-    drawFunctionSurface();
-    drawContourPlot();
+    requestAnimationFrame(() => {
+        resizeCanvases();
+        drawFunctionSurface();
+        drawContourPlot();
+    });
 }
 
 // Update statistics
@@ -367,8 +416,11 @@ function resetVisualization() {
     history = [{ x: currentX, y: currentY }];
     
     updateStats();
-    drawFunctionSurface();
-    drawContourPlot();
+    requestAnimationFrame(() => {
+        resizeCanvases();
+        drawFunctionSurface();
+        drawContourPlot();
+    });
 }
 
 function formatLearningRate(value) {
